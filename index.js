@@ -5,6 +5,8 @@ import dotenv from "dotenv"
 import postRouter from "./src/routes/postRoutes.js";
 import userRouter from "./src/routes/userRoutes.js";
 import cookieParser from "cookie-parser";
+import taskRouter from "./src/routes/task.route.js";
+import walletRouter from "./src/routes/waller.route.js";
 
 //configration
 dotenv.config();
@@ -18,6 +20,8 @@ app.use(cookieParser());
 //api
 app.use("/api/instaPost/",postRouter);
 app.use("/api/user/",userRouter)
+app.use("/api/v1",taskRouter);
+app.use("/api/wallet",walletRouter)
 
 // server running
 app.listen(port,()=>{

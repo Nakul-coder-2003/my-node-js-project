@@ -21,11 +21,17 @@ const userSchema = new mongoose.Schema({
     },
     password:{
         type:"String",
-        required:true
+        required:true,
+        select:false
     },
     profileImg:{
         type:"String",
         required:false
+    },
+    balance:{
+        type:Number,
+        default:1000,
+        min:0
     }
 },{timestamps:true})
 
