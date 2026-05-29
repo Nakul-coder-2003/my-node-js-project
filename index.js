@@ -19,7 +19,7 @@ app.use(cookieParser());
 
 //api
 app.use("/api/instaPost/",postRouter);
-app.use("/api/user/",userRouter)
+app.use("/api/user",userRouter)
 app.use("/api/v1",taskRouter);
 app.use("/api/wallet",walletRouter)
 

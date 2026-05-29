@@ -53,12 +53,12 @@ export const signup = async(req,res)=>{
 export const login = async(req,res)=>{
    try {
     const {email,password} = req.body;
-
+    // console.log(email);
     if(!email || !password){
         return res.status(400).json({message:"please send email or password!"})
     }
 
-    const existUser = await userModel.findOne({email})
+    const existUser = await userModel.findOne({email}).select("+password");
     if(!existUser){
         return res.status(400).json({message:"user does not exist! please create account first!"})
     }
@@ -77,7 +77,7 @@ export const login = async(req,res)=>{
 
     res.cookie("token",token).status(200).json({message:'user login successfully!'})
 
-    await sendLoginEmail(existUser.email,existUser.firstName)
+    // await sendLoginEmail(existUser.email,existUser.firstName)
 
    } catch (error) {
     console.log(error)
