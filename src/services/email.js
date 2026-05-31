@@ -76,11 +76,11 @@ export const sendDebitEmail = async (email, name, amount, remainingBalance) => {
 };
 
 export const sendCreditEmail = async (email, name, amount, newBalance) => {
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Money Credited to your Wallet 🎉",
-        html: `
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Money Credited to your Wallet 🎉",
+    html: `
             <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px; margin: auto;">
                 <h2 style="color: #5cb85c;">Money Received!</h2>
                 <p>Hello <b>${name}</b>,</p>
@@ -90,7 +90,24 @@ export const sendCreditEmail = async (email, name, amount, newBalance) => {
                 </div>
                 <p>Enjoy your newly added funds!</p>
             </div>
-        `
-    };
-    await transporter.sendMail(mailOptions);
+        `,
+  };
+  await transporter.sendMail(mailOptions);
+};
+
+export const sendOtpEmail = async (email, name, otp) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Password Reset OTP",
+    html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2>Password Reset Request</h2>
+                <p>Hello <b>${name}</b>,</p>
+                <p>Your OTP to reset your password is: <b style="font-size: 24px; color: blue;">${otp}</b></p>
+                <p>This OTP is valid for only 15 minutes. Do not share it with anyone.</p>
+          </div>
+        `,
+  };
+  await transporter.sendMail(mailOptions);
 };

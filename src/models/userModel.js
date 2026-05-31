@@ -2,36 +2,44 @@ import mongoose from "mongoose"
 
 const userSchema = new mongoose.Schema({
     firstName:{
-        type:"String",
+        type:String,
         required:true
     },
     lastName:{
-        type:"String",
+        type:String,
         required:true
     },
     userName:{
-        type:"String",
+        type:String,
         required:true,
         unique:true
     },
     email:{
-        type:"String",
+        type:String,
         required:true,
         unique:true
     },
     password:{
-        type:"String",
+        type:String,
         required:true,
         select : false
     },
     profileImg:{
-        type:"String",
+        type:String,
         required:false
     },
     balance:{
         type:Number,
         default:1000,
         min:0
+    },
+    resetPasswordOtp:{
+        type:Number,
+        required:false
+    },
+    resetPasswordOtpExpiry:{
+        type:Date,
+        required:false
     }
 },{timestamps:true})
 
