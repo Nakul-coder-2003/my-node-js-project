@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 import userModel from "../models/userModel.js"
 import transactionModel from "../models/transaction.model.js"
-import { sendCreditEmail, sendDebitEmail } from "../services/email.js";
+import { sendApprovedEmail, sendCreditEmail, sendDebitEmail, sendMoneyRequestEmail, sendRejectedEmail } from "../services/email.js";
 
 export const transferMoney = async(req,res) => {
     // 1. Session start karo (Rough copy kholo)
@@ -120,3 +120,122 @@ export const getMyTransactionSummary = async (req, res) => {
     }
 };
 
+export const requestMoney = async(req,res)=>{
+    try {
+        const requesterId = req.user.id;
+        const { payerId, amount } = req.body;
+        console.log(payerId)
+        console.log(amount)
+        if (!payerId || !amount) {
+            return res.status(400).json({ message: "payerId ya amount are missing!" });
+        }
+
+        const newRequest = new transactionModel({
+            receiverId: requesterId,
+            senderId: payerId,
+            amount: amount,
+            type: "request",
+            status: "pending"
+        });
+
+        await newRequest.save();
+
+        const payerInfo = await userModel.findById(payerId);
+        const requesterInfo = await userModel.findById(requesterId);
+
+        sendMoneyRequestEmail(payerInfo.email, payerInfo.firstName, requesterInfo.firstName, amount);
+
+        res.status(200).json({
+            message: "Money request sent successfully!",
+            requestId: newRequest._id
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: `Error: ${error.message}` });
+    }
+}
+
+export const approvedRequest = async(req,res)=>{
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const payerId = String(req.user.id || req.user._id); // Logged-in user jo approve kar raha hai
+        const requestId = req.params.id; // URL se request ki ID aayegi
+
+        // 1. Find request and check conditions
+        const request = await transactionModel.findById(requestId).session(session);
+        
+        if (!request) throw new Error("Request not found!");
+        if (request.status !== "pending") throw new Error("This request is already processed!");
+        if (String(request.senderId) !== payerId) {
+            throw new Error("You are not authorized to approve this!");
+        }
+
+        // 2. Check Payer's Balance
+        const payer = await userModel.findById(payerId).session(session);
+        if (payer.balance < request.amount) throw new Error("Insufficient Balance to approve this request!");
+
+        const requester = await userModel.findById(request.receiverId).session(session);
+        
+        const transferAmount = Number(request.amount);
+        // 3. Deduct & Add Balance ($inc ka use kiya safety ke liye)
+        await userModel.findByIdAndUpdate(payerId, { $inc: { balance: -transferAmount } }, { session });
+        await userModel.findByIdAndUpdate(request.receiverId, { $inc: { balance: +transferAmount } }, { session });
+
+        // 4. Update Request Status
+        request.status = "success";
+        await request.save({ session });
+
+        // 5. Commit Transaction
+        await session.commitTransaction();
+
+        // 6. Send Email to Requester
+        try {
+            await sendApprovedEmail(requester.email, requester.firstName, payer.firstName, transferAmount);
+        } catch (emailError) {
+            console.log("Transaction successful, but Email failed to send:", emailError.message);
+        }
+
+        res.status(200).json({ message: "Request approved and money transferred!" });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(400).json({ message: error.message });
+    } finally {
+        session.endSession();
+    }
+}
+
+export const rejectedRequest = async(req,res)=>{
+    try {
+        const payerId = String(req.user.id || req.user._id);
+        const requestId = req.params.id;
+
+        // Isme balance deduct nahi karna, sirf status change karna hai
+        const request = await transactionModel.findOneAndUpdate(
+            { _id: requestId, senderId: payerId, status: "pending" },
+            { status: "rejected" },
+            { new: true }
+        );
+        console.log(request)
+        if (!request) {
+            return res.status(404).json({ message: "Pending request not found or unauthorized!" });
+        }
+
+        const payer = await userModel.findById(payerId);
+        const requester = await userModel.findById(request.receiverId);
+
+        // Email bhejo ki request reject ho gayi
+        try {
+            sendRejectionEmail(requester.email, requester.firstName, payer.firstName, request.amount);
+        } catch (emailError) {
+            console.log("Requset rejected, but Email failed to send:", emailError.message);
+        }
+        res.status(200).json({ message: "Money request rejected." });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: `Error: ${error.message}` });
+    }
+}

@@ -16,9 +16,14 @@ const transactionSchema = new mongoose.Schema({
         required:true,
         min:1
     },
+    type:{
+        type:String,
+        enum: ["transfer","request"],
+        default:"transfer"
+    },
     status:{
         type:String,
-        enum:["pending","success","failed"],
+        enum:["pending","success","failed","Approved","Rejected"],
         default:"pending"
     }
 },{timestamps:true})

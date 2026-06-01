@@ -111,3 +111,39 @@ export const sendOtpEmail = async (email, name, otp) => {
   };
   await transporter.sendMail(mailOptions);
 };
+
+
+export const sendMoneyRequestEmail = async(payerEmail,payerName,requesterName,amount)=>{
+   const mailOptions = {
+     from:process.env.EMAIL_USER,
+     to:payerEmail,
+     subject:"Money Request Pending",
+     html: `<p>Hello <b>${payerName}</b>,</p>
+               <p><b>${requesterName}</b> has requested <b>₹${amount}</b> from you.</p>
+               <p>Please log in to your app to approve or reject this request.</p>`
+   };
+   await transporter.sendMail(mailOptions);
+}
+
+export const sendApprovedEmail = async(requesterEmail,requesterName,payerName,amount)=>{
+    const mailOptions = {
+      from:process.env.EMAIL_USER,
+      to:requesterEmail,
+      subject:"Money Request Approved! 🎉",
+      html: `<p>Hello <b>${requesterName}</b>,</p>
+               <p>Good news! <b>${payerName}</b> has approved your request for <b>₹${amount}</b>.</p>
+               <p>The money has been added to your wallet.</p>`
+    };
+    await transporter.sendMail(mailOptions);
+}
+
+export const sendRejectedEmail = async(requesterEmail,requesterName,payerName,amount)=>{
+    const mailOptions = {
+      from : process.env.EMAIL_USER,
+      to: requesterEmail,
+      subject: "Money Request Rejected",
+      html: `<p>Hello <b>${requesterName}</b>,</p>
+              <p>We wanted to let you know that <b>${payerName}</b> has declined your request for <b>₹${amount}</b>.</p>`
+    };
+    await transporter.sendMail(mailOptions);
+}
